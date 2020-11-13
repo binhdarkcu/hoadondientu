@@ -8,7 +8,7 @@ import { sendHttpRequest } from './http-handler';
 const adminRegisterApiUrl = `${baseUrl}/api/User/AdminRegister`;
 const userRegisterApiUrl = `${baseUrl}/api/User/UserRegister`;
 const activateUrl = `${baseUrl}/api/User/Active`;
-const userListUrl = `${baseUrl}/api/Users`;
+const userListUrl = `${baseUrl}/api/Users/Paging?pageNumber=`;
 const userDetailUrl = `${baseUrl}/api/User?id=`;
 const changePasswordUrl = `${baseUrl}/api/User/ChangePassword`;
 const getUserByPatientCodeUrl = `${baseUrl}/api/PatientByCode?code=`;
@@ -74,14 +74,14 @@ export const execRegister = (data, type, isForce) => dispatch => {
 };
 
 // Get user list
-export const execGetUserList = () => dispatch => {
+export const execGetUserList = (pageNumber) => dispatch => {
   const parameters = {
     method: 'GET',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
   };
 
   return new Promise((resolve, reject) => {
-    sendHttpRequest(userListUrl, parameters)
+    sendHttpRequest(userListUrl + pageNumber, parameters)
       .then(data => resolve(data))
       .catch(err => reject(err));
   });

@@ -11,6 +11,8 @@ import { USER } from '../../constants/User';
 import Spinner from '../../components/Spinner';
 import { GOLDEN_HEALTH_ORANGE } from '../../constants/Colors';
 import MaterialTable from 'material-table';
+import TablePagination from '@material-ui/core/TablePagination';
+
 import { confirmAlert } from 'react-confirm-alert';
 //custom import
 import { GET_USER_LIST } from '../../actions/types';
@@ -24,7 +26,7 @@ import ActivatePatientPostModel from "../../models/activatePatientPostModel";
 
 const getUsers = createAction(GET_USER_LIST);
 const mapDispatchToProps = dispatch => ({
-  getUserList: () => dispatch(execGetUserList()),
+  getUserList: (pageNumber) => { return dispatch(execGetUserList(pageNumber)) },
   saveUserListToStore: data => dispatch(getUsers(data)),
   gotoUserDetailsPage: id => dispatch({ type: 'RTE_CHI_TIET_USER', payload: { id } }),
   gotoUpdateRegularUserPage: id => dispatch({ type: 'RTE_USER_UPDATE', payload: { id } }),
@@ -34,11 +36,13 @@ const mapDispatchToProps = dispatch => ({
   adminApprove: id => dispatch(execAdminApprove(id)),
 });
 
-const mapStateToProps = ({ services, location }) => ({
-  users: services.user.userList,
-  currentUser: services.user.userInfo,
-  location: location,
-});
+const mapStateToProps = ({ services, location }) => {
+    return {
+      users: services.user.userList,
+      currentUser: services.user.userInfo,
+      location: location,
+    }
+}
 
 const styles = theme => ({
   root: {
@@ -65,17 +69,27 @@ class FormDanhSachUser extends React.Component {
 
   state = {
     loading: true,
+    totalCount: 1000,
+    pageSize: 20,
+    currentPage: 1
   };
 
   componentDidMount() {
-    this.fetchUserList();
+    this.fetchUserList(0);
   }
 
-  fetchUserList = async () => {
+  fetchUserList = async (pageNumber) => {
     try{
-      const result = await this.props.getUserList();
-      if(result.status === 200) this.props.saveUserListToStore(_.orderBy(_.map(result.json, user => new ActivatePatientPostModel(user)), function(user){return user.getFormattedRegisterDate()}, ['desc']));
-      this.setState({loading: false});
+        if(pageNumber > 0) {
+            this.setState({loading: true})        
+        }
+      const result = await this.props.getUserList(pageNumber);
+      const totalCount = result.json.totalCount
+      const pageSize = result.json.pageSize
+      const currentPage = result.json.currentPage
+      const userList = result.json.listData
+      if(result.status === 200) this.props.saveUserListToStore(_.orderBy(_.map(userList, user => new ActivatePatientPostModel(user)), function(user){return user.getFormattedRegisterDate()}, ['desc']));
+      this.setState({loading: false, totalCount: totalCount, pageSize: pageSize, currentPage: currentPage});
     }catch (e) {
       this.handleError({detail: e, message: MSG.ERROR_OCCURED});
     }
@@ -157,7 +171,7 @@ class FormDanhSachUser extends React.Component {
 
   render() {
     const { classes, users, currentUser } = this.props;
-    const { loading } = this.state;
+    const { loading, totalCount, currentPage, pageSize } = this.state;
     const columns = [
       { title: 'Tên user', field: 'ten', render: user =>  user.getFullName(), customFilterAndSearch: this.filterByFullName },
       { title: 'Mã y tế', field: 'maYte' },
@@ -192,9 +206,17 @@ class FormDanhSachUser extends React.Component {
           localization={vietnamese}
           columns={columns}
           data={users}
+          components={{
+              Pagination: props => <TablePagination {...props} count={totalCount} page={currentPage} 
+              onChangePage={(e, page) => { /* handle page changes */ 
+                  this.fetchUserList(page)      
+              }} 
+              onChangeRowsPerPage={(event) => { /* handle page size change : event.target.value */}}/>
+          }}
+          // data={ query => return {data: users, page: currentPage, totalCount: totalCount} }
           options= {{
-            pageSize: 20,
-            pageSizeOptions: [10, 20, 50, 100],
+            pageSize: pageSize,
+            pageSizeOptions: [],
             debounceInterval: 200,
             showTitle: false,
             emptyRowsWhenPaging: false,
