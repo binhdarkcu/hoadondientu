@@ -96,7 +96,7 @@ class PageLogin extends Component{
                   {username_error && <InputErrorDisplayer message={USERNAME_REQUIRED}/>}
                 </div>
                 <div className="form-login">
-                  <input ref={(node)=>{this.password = node;}} value={'webapp'} type="password" className="form-control" placeholder="Password" required />
+                  <input ref={(node)=>{this.password = node;}} value={'webapp123'} type="password" className="form-control" placeholder="Password" required />
                   {password_error && <InputErrorDisplayer message={PASSWORD_REQUIRED}/>}
                 </div>
                 <div>
