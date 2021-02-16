@@ -74,14 +74,14 @@ export const execRegister = (data, type, isForce) => dispatch => {
 };
 
 // Get user list
-export const execGetUserList = (pageNumber) => dispatch => {
+export const execGetUserList = (pageNumber, code, email, phone) => dispatch => {
   const parameters = {
     method: 'GET',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
   };
 
   return new Promise((resolve, reject) => {
-    sendHttpRequest(userListUrl + pageNumber, parameters)
+    sendHttpRequest(userListUrl + pageNumber+'&code='+code+'&email='+email+'&phone='+phone, parameters)
       .then(data => resolve(data))
       .catch(err => reject(err));
   });

@@ -20,7 +20,15 @@ body {
 a {
   text-decoration: none;
 }
-
+.search-form{
+    padding: 10px;
+    label {
+        margin-right: 5px;
+    }
+    .marginLeft10 {
+        margin-left: 10px;
+    }
+}
 .clear {
     clear: both;
 }

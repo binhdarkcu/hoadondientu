@@ -26,7 +26,7 @@ import ActivatePatientPostModel from "../../models/activatePatientPostModel";
 
 const getUsers = createAction(GET_USER_LIST);
 const mapDispatchToProps = dispatch => ({
-  getUserList: (pageNumber) => { return dispatch(execGetUserList(pageNumber)) },
+  getUserList: (pageNumber, code, email, phone) => { return dispatch(execGetUserList(pageNumber, code, email, phone)) },
   saveUserListToStore: data => dispatch(getUsers(data)),
   gotoUserDetailsPage: id => dispatch({ type: 'RTE_CHI_TIET_USER', payload: { id } }),
   gotoUpdateRegularUserPage: id => dispatch({ type: 'RTE_USER_UPDATE', payload: { id } }),
@@ -66,24 +66,49 @@ const styles = theme => ({
 });
 
 class FormDanhSachUser extends React.Component {
-
+    constructor(props) {
+       super(props);
+       this.changeUserSearch = this.changeUserSearch.bind(this);
+    }
   state = {
     loading: true,
     totalCount: 1000,
     pageSize: 20,
-    currentPage: 1
+    currentPage: 1,
+    userCode:'',
+    userEmail:'',
+    userPhone: '',
+    typingTimeout: 0
   };
 
-  componentDidMount() {
-    this.fetchUserList(0);
+  changeUserSearch = (evt, typeSearch) => {
+      var searchText = evt.target.value; // this is the search text
+      this.setState({[typeSearch]: searchText})
+      if(this.timeout) clearTimeout(this.timeout);
+      this.timeout = setTimeout(() => {
+        //search function
+        if(typeSearch === 'userCode') {
+            this.fetchUserList(this.state.currentPage, searchText, this.state.userEmail, this.state.userPhone);
+        } else if(typeSearch === 'userEmail'){
+            this.fetchUserList(this.state.currentPage, this.state.userCode, searchText, this.state.userPhone);
+        } else {
+            this.fetchUserList(this.state.currentPage, this.state.userCode, this.state.userEmail, searchText);
+        }
+
+
+      }, 500);
   }
 
-  fetchUserList = async (pageNumber) => {
+  componentDidMount() {
+    this.fetchUserList(0, '', '', '');
+  }
+
+  fetchUserList = async (pageNumber, code, email, phone) => {
     try{
         if(pageNumber > 0) {
-            this.setState({loading: true})        
+            this.setState({loading: true})
         }
-      const result = await this.props.getUserList(pageNumber);
+      const result = await this.props.getUserList(pageNumber, code, email, phone);
       const totalCount = result.json.totalCount
       const pageSize = result.json.pageSize
       const currentPage = result.json.currentPage
@@ -142,7 +167,7 @@ class FormDanhSachUser extends React.Component {
       const result = await this.props.deleteUser(id);
       if(result.status === 200){
         this.handleSuccess(MSG.USER.DELETE.SUCCESS);
-        this.fetchUserList();
+        this.fetchUserList(0, '', '', '');
         return;
       }
 
@@ -171,7 +196,8 @@ class FormDanhSachUser extends React.Component {
 
   render() {
     const { classes, users, currentUser } = this.props;
-    const { loading, totalCount, currentPage, pageSize } = this.state;
+    const { loading, totalCount, currentPage, pageSize, userCode } = this.state;
+    console.log(userCode)
     const columns = [
       { title: 'Tên user', field: 'ten', render: user =>  user.getFullName(), customFilterAndSearch: this.filterByFullName },
       { title: 'Mã y tế', field: 'maYte' },
@@ -202,15 +228,23 @@ class FormDanhSachUser extends React.Component {
     return (
       <Paper className={classes.root}>
         <Spinner type={BOUNCE} size={50} color={GOLDEN_HEALTH_ORANGE} loading={loading} />
+        <div className="search-form">
+            <label>Mã y tế</label>
+            <input type="text" value={this.state.userCode} onChange={(evt) => this.changeUserSearch(evt, 'userCode')}/>
+            <label className="marginLeft10">Email</label>
+            <input type="text" value={this.state.userEmail} onChange={(evt) => this.changeUserSearch(evt, 'userEmail')}/>
+            <label className="marginLeft10">Phone</label>
+            <input type="text" value={this.state.userPhone} onChange={(evt) => this.changeUserSearch(evt, 'userPhone')}/>
+        </div>
         <MaterialTable
           localization={vietnamese}
           columns={columns}
           data={users}
           components={{
-              Pagination: props => <TablePagination {...props} count={totalCount} page={currentPage} 
-              onChangePage={(e, page) => { /* handle page changes */ 
-                  this.fetchUserList(page)      
-              }} 
+              Pagination: props => <TablePagination {...props} count={totalCount} page={currentPage}
+              onChangePage={(e, page) => { /* handle page changes */
+                  this.fetchUserList(page, '', '', '')
+              }}
               onChangeRowsPerPage={(event) => { /* handle page size change : event.target.value */}}/>
           }}
           // data={ query => return {data: users, page: currentPage, totalCount: totalCount} }
